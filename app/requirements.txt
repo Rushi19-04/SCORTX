@@ -1,0 +1,12 @@
+flask
+requests
+flask-cors
+docker
+flask
+requests
+flask-cors
+docker
+openai
+pymongo
+python-dotenv
+google-generativeai
