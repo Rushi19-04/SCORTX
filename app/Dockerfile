@@ -1,8 +1,14 @@
-# Use Python 3.8 as base (best compatibility for numpy 1.19 + distutils)
-FROM python:3.8-slim
+# Use Mythril's official image as base (guaranteed to work)
+FROM mythril/myth:latest
 
-# Install system dependencies
+# Switch to root to install other tools
+USER root
+
+# Install Python, pip, and git (Mythril image is Alpine based usually or Debian)
 RUN apt-get update && apt-get install -y \
+    python3 \
+    python3-pip \
+    python3-venv \
     git \
     curl \
     wget \
@@ -11,13 +17,12 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Solc (Solidity Compiler)
-RUN pip install solc-select
+RUN pip3 install solc-select
 RUN solc-select install 0.8.20 && solc-select use 0.8.20
 
-# Install Security Tools
-# Upgrade pip to a version that handles wheels well, but keep setuptools old enough for distutils
-RUN pip install "pip==23.0.1" "setuptools<58.0.0" "wheel"
-RUN pip install slither-analyzer mythril
+# Install Slither (Mythril is already installed!)
+# We use --break-system-packages because modern Python environments are strict
+RUN pip3 install slither-analyzer --break-system-packages
 
 WORKDIR /app
 
