@@ -15,9 +15,8 @@ RUN pip install solc-select
 RUN solc-select install 0.8.20 && solc-select use 0.8.20
 
 # Install Security Tools
-# Upgrade pip and setuptools, then install numpy explicitly to avoid build from source issues
-RUN pip install --upgrade pip setuptools wheel
-RUN pip install "numpy<2" 
+# DOWNGRADE setuptools to <58 to support "use_2to3" and "distutils" required by old numpy
+RUN pip install "setuptools<58.0.0" "wheel"
 RUN pip install slither-analyzer mythril
 
 WORKDIR /app
