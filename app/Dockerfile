@@ -16,6 +16,8 @@ RUN pip install solc-select
 RUN solc-select install 0.8.20 && solc-select use 0.8.20
 
 # Install Security Tools
+# Upgrade pip and setuptools to avoid distutils errors with newer packages
+RUN pip install --upgrade pip setuptools wheel
 RUN pip install slither-analyzer mythril
 
 WORKDIR /app
