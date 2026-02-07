@@ -1,7 +1,7 @@
-# Use Python 3.10 as base (compatible with latest tools)
-FROM python:3.10-slim
+# Use Python 3.9 as base (better compatibility with older tools like Mythril's dependencies)
+FROM python:3.9-slim
 
-# Install system dependencies including git (for pip install from git) and basic build tools
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
     git \
     curl \
@@ -11,13 +11,13 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Solc (Solidity Compiler)
-# Using solc-select to manage versions, installing a common version default
 RUN pip install solc-select
 RUN solc-select install 0.8.20 && solc-select use 0.8.20
 
 # Install Security Tools
-# Upgrade pip and setuptools to avoid distutils errors with newer packages
+# Upgrade pip and setuptools, then install numpy explicitly to avoid build from source issues
 RUN pip install --upgrade pip setuptools wheel
+RUN pip install "numpy<2" 
 RUN pip install slither-analyzer mythril
 
 WORKDIR /app
