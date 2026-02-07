@@ -1,5 +1,5 @@
-# Use Python 3.9 as base (better compatibility with older tools like Mythril's dependencies)
-FROM python:3.9-slim
+# Use Python 3.8 as base (best compatibility for numpy 1.19 + distutils)
+FROM python:3.8-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
@@ -15,8 +15,8 @@ RUN pip install solc-select
 RUN solc-select install 0.8.20 && solc-select use 0.8.20
 
 # Install Security Tools
-# DOWNGRADE setuptools to <58 to support "use_2to3" and "distutils" required by old numpy
-RUN pip install "setuptools<58.0.0" "wheel"
+# Upgrade pip to a version that handles wheels well, but keep setuptools old enough for distutils
+RUN pip install "pip==23.0.1" "setuptools<58.0.0" "wheel"
 RUN pip install slither-analyzer mythril
 
 WORKDIR /app
