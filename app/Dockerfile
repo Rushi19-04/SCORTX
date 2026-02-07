@@ -39,5 +39,11 @@ COPY . .
 # Expose port (default Flask port)
 EXPOSE 5000
 
+# Override the base image's ENTRYPOINT (which is likely "myth") so we can run our own command
+ENTRYPOINT []
+
+# Start the Flask app
+CMD ["python3", "app.py"]
+
 # Run the application
 CMD ["python", "app.py"]
