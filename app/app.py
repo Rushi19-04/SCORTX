@@ -309,18 +309,51 @@ FIXED CONTRACT:"""
 
                 if response and response.text:
                     try:
-                        # Clean cleanup potential markdown code blocks if model didn't obey JSON mode perfectly
+                        # Clean cleanup potential markdown code blocks
                         text_response = response.text.strip()
-                        if text_response.startswith('```json'):
-                            text_response = text_response[7:-3]
-                        elif text_response.startswith('```'):
-                            text_response = text_response[3:-3]
-                            
-                        json_response = json.loads(text_response)
                         
+                        # Remove markdown code blocks if present (standard Gemini behavior)
+                        if text_response.startswith('```json'):
+                            text_response = text_response[7:-3].strip()
+                        elif text_response.startswith('```'):
+                            text_response = text_response[3:-3].strip()
+
+                        # Parse the JSON
+                        try:
+                            json_response = json.loads(text_response)
+                        except json.JSONDecodeError:
+                            # If it's not valid JSON, maybe it's just the code?
+                            # But we asked for JSON, so let's try to find the JSON object if there's extra text
+                            json_start = text_response.find('{')
+                            json_end = text_response.rfind('}')
+                            if json_start != -1 and json_end != -1:
+                                text_response = text_response[json_start:json_end+1]
+                                json_response = json.loads(text_response)
+                            else:
+                                raise ValueError("Could not find JSON object in response")
+
                         fixed_code = json_response.get('fixed_code', '')
                         ai_recommendations = json_response.get('recommendations', [])
                         
+                        # CRITICAL FIX: The model sometimes puts the JSON *inside* the fixed_code field
+                        # or returns the whole JSON as the fixed code if parsing failed previously.
+                        # Let's clean the fixed_code string itself.
+                        if isinstance(fixed_code, str):
+                             if fixed_code.strip().startswith('```solidity'):
+                                 fixed_code = fixed_code.strip()[11:-3].strip()
+                             elif fixed_code.strip().startswith('```'):
+                                 fixed_code = fixed_code.strip()[3:-3].strip()
+
+                        # If fixed_code still looks like a JSON object (starts with {), it might be a nested error
+                        if isinstance(fixed_code, str) and fixed_code.strip().startswith('{') and '"fixed_code":' in fixed_code:
+                             # Recursively try to parse it again? Or just fail safely
+                             try:
+                                 nested = json.loads(fixed_code)
+                                 if 'fixed_code' in nested:
+                                     fixed_code = nested['fixed_code']
+                             except:
+                                 pass
+
                         # Merge AI recommendations into findings
                         for ai_rec in ai_recommendations:
                             rec_line = ai_rec.get('line')
@@ -332,15 +365,15 @@ FIXED CONTRACT:"""
                                         finding['recommendation'] = f"🤖 AI: {rec_text}"
                         
                         logger.info("AI response received and parsed")
-                    except json.JSONDecodeError:
-                         logger.error("Failed to parse AI JSON response")
-                         # Fallback if JSON fails but we have text (maybe it returned just code?)
-                         fixed_code = response.text
-                         if fixed_code.startswith('```'):
-                            lines = fixed_code.split('\n')
-                            fixed_code = '\n'.join(lines[1:-1]) if len(lines) > 2 else fixed_code
                     except Exception as e:
                         logger.error(f"Error processing AI response: {e}")
+                        # Fallback: If JSON parsing fails, just return the raw text if it looks like code
+                        # But be careful not to return the JSON error message
+                        if response.text and not response.text.strip().startswith('{'):
+                             fixed_code = response.text
+                             if fixed_code.startswith('```'):
+                                lines = fixed_code.split('\n')
+                                fixed_code = '\n'.join(lines[1:-1]) if len(lines) > 2 else fixed_code
 
                     # Generate fixes summary (keep existing logic for UI pill)
                     for f in findings_to_fix[:100]: # Show all fixed issues
