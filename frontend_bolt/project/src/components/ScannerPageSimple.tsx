@@ -78,7 +78,6 @@ export default function ScannerPageSimple({ onBack }: ScannerPageSimpleProps) {
             }, 1000);
 
             const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:5000';
-            console.log("🚀 Attempting to connect to Backend URL:", apiUrl);
 
             const response = await fetch(`${apiUrl}/scan`, {
                 method: 'POST',
@@ -91,12 +90,11 @@ export default function ScannerPageSimple({ onBack }: ScannerPageSimpleProps) {
                 }),
             });
 
-            console.log("Response Status:", response.status);
-
             clearInterval(progressInterval);
 
             if (!response.ok) {
                 const errorText = await response.text();
+                // Keep this error log as it's useful for production issues
                 console.error("Backend Error Details:", errorText);
                 throw new Error(`Scan failed: ${response.status} ${response.statusText}`);
             }
