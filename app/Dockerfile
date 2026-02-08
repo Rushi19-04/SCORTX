@@ -39,12 +39,5 @@ COPY . .
 # Expose port (default Flask port)
 EXPOSE 5000
 
-# Install Gunicorn for production server
-RUN pip install gunicorn
-
-# Override the base image's ENTRYPOINT (which is likely "myth") so we can run our own command
-ENTRYPOINT []
-
-# Start the Flask app using Gunicorn
-# This is much more stable than "python app.py" for production
-CMD gunicorn --bind 0.0.0.0:$PORT app:app
+# Start the Flask app directly (simple and reliable)
+CMD ["python3", "app.py"]

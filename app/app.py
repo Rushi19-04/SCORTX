@@ -366,6 +366,8 @@ FIXED CONTRACT:"""
         "fixes_applied": fixes_applied
     })
 
+
+if __name__ == '__main__':
     # Production-ready configuration
     port = int(os.environ.get('PORT', 5000))
     debug_mode = os.environ.get('FLASK_ENV') == 'development'
